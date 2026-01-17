@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>محطة Artemis القمرية - HYDROSHELL IRAQ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Tajawal', 'Orbitron', sans-serif;
+            background: #000;
+            color: white;
+            touch-action: none;
+        }
+        
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+        
+        .start-screen {
+            background: url('https://images-assets.nasa.gov/image/iss043e102807/iss043e102807~large.jpg') center/cover no-repeat;
+        }
+        
+        .start-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(3px);
+        }
+        
+        .start-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            max-width: 800px;
+            background: rgba(0, 10, 20, 0.8);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
+        }
+        
+        .main-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: bold;
+            background: linear-gradient(45deg, #00a8cc, #0097e6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(0, 168, 204, 0.5);
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            color: #7fffd4;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        
+        .nasa-badge {
+            display: inline-block;
+            background: #e31837;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .start-button {
+            padding: 1.2rem 3rem;
+            font-size: 1.3rem;
+            background: linear-gradient(45deg, #006080, #00a0cc);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+        }
+        
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 243, 255, 0.4);
+        }
+        
+        .mission-info {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            line-height: 1.5;
+        }
+        
+        .character-select-screen {
+            background: url('https://images-assets.nasa.gov/image/ksc-20210520-ph-mhm02_0044/ksc-20210520-ph-mhm02_0044~large.jpg') center/cover no-repeat;
+        }
+        
+        .character-select-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+        }
+        
+        .character-title {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            color: #00f3ff;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+        
+        .characters-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: rgba(0, 15, 30, 0.9);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 2rem;
+        }
+        
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .character-card {
+            background: linear-gradient(145deg, rgba(10, 25, 47, 0.9), rgba(5, 15, 30, 0.9));
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            border-radius: 10px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .character-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.1), transparent);
+            transition: left 0.7s;
+        }
+        
+        .character-card:hover::before {
+            left: 100%;
+        }
+        
+        .character-card:hover {
+            border-color: #00f3ff;
+            box-shadow: 0 5px 20px rgba(0, 243, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .character-card.selected {
+            background: linear-gradient(145deg, rgba(0, 60, 120, 0.7), rgba(0, 40, 80, 0.7));
+            border-color: #00ff00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.3);
+        }
+        
+        .character-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0097e6, #00a8cc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 1rem;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .character-info {
+            text-align: center;
+        }
+        
+        .character-name {
+            font-size: 1.2rem;
+            color: #00f3ff;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+        
+        .character-role {
+            color: #ffcc00;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+            font-weight: 400;
+        }
+        
+        .character-nationality {
+            color: #7fffd4;
+            font-size: 0.85rem;
+            font-weight: 300;
+        }
+        
+        .confirm-button {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            background: linear-gradient(45deg, #00a67c, #00cc95);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .confirm-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 255, 170, 0.3);
+        }
+        
+        .confirm-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .game-screen {
+            display: none;
+        }
+        
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .mobile-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .mobile-joystick {
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        
+        .joystick-head {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 243, 255, 0.7);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 100, 255, 0.8);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.9);
+            background: rgba(0, 100, 255, 1);
+        }
+        
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        
+        .hud-left, .hud-right {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(5px);
+            min-width: 180px;
+            font-size: 0.9rem;
+        }
+        
+        .hud-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .hud-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .hud-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .interaction-hint {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid #00ff00;
+            font-size: 1rem;
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-bar-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #006080, #00a0cc);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-text {
+            color: #7fffd4;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .language-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+        }
+        
+        .lang-btn {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid #00f3ff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .lang-btn:hover {
+            background: rgba(0, 243, 255, 0.2);
+        }
+        
+        .sleep-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sleep-text {
+            font-size: clamp(1.8rem, 4vw, 3.5rem);
+            color: #7fffd4;
+            text-align: center;
+            animation: breathe 3s infinite ease-in-out;
+        }
+        
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #aaa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            z-index: 9;
+            pointer-events: none;
+            max-width: 300px;
+        }
+        
+        .movement-instructions {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ff00;
+            z-index: 9;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .movement-keys {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .movement-key {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 100, 255, 0.5);
+            border: 1px solid #00aaff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .movement-key.w { grid-column: 2; grid-row: 1; }
+        .movement-key.a { grid-column: 1; grid-row: 2; }
+        .movement-key.s { grid-column: 2; grid-row: 2; }
+        .movement-key.d { grid-column: 3; grid-row: 2; }
+        .movement-key.e { grid-column: 2; grid-row: 3; background: rgba(0, 255, 0, 0.5); border-color: #00ff00; }
+        
+        @keyframes hologram-flicker {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 0.85; }
+        }
+        
+        .hologram-ui {
+            animation: hologram-flicker 2s infinite;
+            filter: hue-rotate(180deg) contrast(1.2);
+        }
+        
+        .game-screen {
+            filter: contrast(1.1) saturate(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .hud {
+                flex-direction: column;
+                gap: 10px;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+            }
+            
+            .hud-left, .hud-right {
+                width: 100%;
+                min-width: auto;
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .character-card {
+                padding: 1rem;
+            }
+            
+            .character-avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            .character-name {
+                font-size: 1rem;
+            }
+            
+            .interaction-hint {
+                bottom: 150px;
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+            
+            .instructions, .movement-instructions {
+                display: none;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switcher">
+        <button class="lang-btn" id="langBtn">EN</button>
+    </div>
+
+    <div class="screen start-screen" id="startScreen">
+        <div class="start-content">
+            <div class="main-logo" id="mainLogo">HYDROSHELL IRAQ</div>
+            <div class="nasa-badge">NASA ARTEMIS PROGRAM</div>
+            <div class="subtitle" id="subtitle">محاكاة واقعية لمحطة Artemis القمرية بنسب ناسا</div>
+            <button class="start-button" id="startButton">🚀 بدء المهمة</button>
+            <div class="mission-info">
+                <div>المستوى: محاكاة متقدمة | نسبة الدقة: 1:1 مع مقاييس ناسا</div>
+                <div>التحكم: WASD للحركة | E للتفاعل | الفأرة للرؤية</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="screen character-select-screen" id="characterScreen" style="display: none;">
+        <h2 class="character-title" id="characterTitle">اختر رائد الفضاء</h2>
+        
+        <div class="characters-container">
+            <div class="characters-grid" id="charactersGrid">
+            </div>
+            
+            <button class="confirm-button" id="confirmButton" disabled>✅ تأكيد الاختيار</button>
+            
+            <div style="margin-top: 1rem; color: #7fffd4; font-size: 0.9rem; text-align: center;">
+                <span id="selectedCount">0</span> شخصية مختارة
+            </div>
+        </div>
+    </div>
+
+    <div class="game-screen" id="gameScreen">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="hud">
+            <div class="hud-left">
+                <div class="hud-item" id="hudCharacter">
+                    <span class="hud-icon">👨‍🚀</span>
+                    <span id="characterName">-</span>
+                </div>
+                <div class="hud-item" id="hudLocation">
+                    <span class="hud-icon">📍</span>
+                    <span id="locationText">محطة Artemis القمرية</span>
+                </div>
+                <div class="hud-item" id="hudObjective">
+                    <span class="hud-icon">🎯</span>
+                    <span id="objectiveText">استكشف المحطة</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item" id="hudOxygen">
+                    <span class="hud-icon">🎯</span>
+                    <span id="objectiveText">استكشف المحطة</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item" id="hudOxygen">
+                    <span class="hud-icon">💨</span>
+                    <span>O₂: <span id="oxygenValue">100</span>%</span>
+                </div>
+                <div class="hud-item" id="hudPressure">
+                    <span class="hud-icon">📊</span>
+                    <span>Pressure: <span id="pressureValue">14.7</span> psi</span>
+                </div>
+                <div class="hud-item" id="hudTemperature">
+                    <span class="hud-icon">🌡️</span>
+                    <span>Temp: <span id="tempValue">22</span>°C</span>
+                </div>
+                <div class="hud-item" id="hudWaste">
+                    <span class="hud-icon">🗑️</span>
+                    <span>Waste: <span id="wasteValue">0</span>/5</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="interaction-hint" id="interactionHint"></div>
+        
+        <div class="instructions" id="desktopInstructions">
+            تحكم: WASD للحركة | E للتفاعل | مسافة للقفز | Shift للركض
+        </div>
+        
+        <div class="movement-instructions">
+            <div>أزرار الحركة:</div>
+            <div class="movement-keys">
+                <div class="movement-key w">W</div>
+                <div class="movement-key a">A</div>
+                <div class="movement-key s">S</div>
+                <div class="movement-key d">D</div>
+                <div class="movement-key e">E</div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.8rem;">
+                حرك الفأرة للرؤية<br>
+                E للتفاعل
+            </div>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="mobile-joystick" id="joystick">
+                <div class="joystick-head"></div>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn" id="actionBtn">E</button>
+                <button class="action-btn" id="jumpBtn">↑</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sleep-overlay" id="sleepScreen">
+        <div class="sleep-text" id="sleepText">💤 المحطة في وضع السبات</div>
+        <div class="sleep-text" style="font-size: 1.2rem; margin-top: 1rem;">المهمة اكتملت بنجاح!</div>
+    </div>
+
+    <div class="loading-container" id="loadingScreen" style="display: none;">
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; color: #00f3ff; margin-bottom: 1rem;">🚀</div>
+            <div style="color: #7fffd4; font-size: 1.2rem; margin-bottom: 0.5rem;" id="loadingTitle">تهيئة نظام المحاكاة</div>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loadingBar"></div>
+            </div>
+            <div class="loading-text" id="loadingText">جاري تحميل النماذج ثلاثية الأبعاد...</div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-space-game-668.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="clickSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="walkSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-footsteps-on-metal-floor-892.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="doorSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sliding-door-389.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="machineSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-machine-working-800.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        class ArtemisMission {
+            constructor() {
+                this.state = {
+                    language: 'ar',
+                    selectedCharacter: null,
+                    gameLoaded: false,
+                    currentLocation: 'artemis_base_exterior',
+                    currentObjective: 'explore_base',
+                    oxygen: 100,
+                    pressure: 14.7,
+                    temperature: 22,
+                    missionTime: 0,
+                    interactions: 0,
+                    systemStatus: 'NOMINAL',
+                    plasticWaste: 0,
+                    wasteRequired: 5
+                };
+                
+                this.astronauts = [
+                    { 
+                        id: 1, 
+                        name: { ar: 'القائد عبدالله إياد', en: 'Commander Abdullah Iyad' },
+                        role: { ar: 'قائد المهمة', en: 'Mission Commander' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👨‍🚀',
+                        experience: '15 سنة في الملاحة الفضائية',
+                        specialty: 'قيادة العمليات والملاحة'
+                    },
+                    { 
+                        id: 2, 
+                        name: { ar: 'القائد صلاح الدين عامر', en: 'Commander Salahuddin Amer' },
+                        role: { ar: 'مساعد القائد', en: 'Assistant Commander' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '🧑‍🚀',
+                        experience: '12 سنة في العمليات الفضائية',
+                        specialty: 'التنسيق والدعم'
+                    },
+                    { 
+                        id: 3, 
+                        name: { ar: 'المهندس علي الأكبر', en: 'Engineer Ali Al-Akbar' },
+                        role: { ar: 'مهندس الاتصالات', en: 'Communications Engineer' },
+                        nationality: { ar: 'لبنان', en: 'Lebanon' },
+                        avatar: '📡',
+                        experience: '14 سنة في الاتصالات الفضائية',
+                        specialty: 'أنظمة الاتصالات'
+                    },
+                    { 
+                        id: 4, 
+                        name: { ar: 'المهندس منتظر علي', en: 'Engineer Muntadhar Ali' },
+                        role: { ar: 'مهندس حاسوب', en: 'Computer Engineer' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👨‍💻',
+                        experience: '10 سنة في هندسة الأنظمة',
+                        specialty: 'برمجة وأنظمة التحكم'
+                    },
+                    { 
+                        id: 5, 
+                        name: { ar: 'رائد الفضاء علي سرحان', en: 'Astronaut Ali Sarhan' },
+                        role: { ar: 'رائد الفضاء', en: 'Astronaut' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '🚀',
+                        experience: '8 سنوات في الرحلات الفضائية',
+                        specialty: 'العمليات خارج المركبة'
+                    },
+                    { 
+                        id: 6, 
+                        name: { ar: 'رائد الفضاء محمد الطائي', en: 'Astronaut Mohammed Al-Tai' },
+                        role: { ar: 'رائد فضاء رتبة ٢', en: 'Astronaut Rank 2' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👨‍🚀',
+                        experience: '6 سنوات في التدريبات الفضائية',
+                        specialty: 'الدعم والمساعدة'
+                    },
+                    { 
+                        id: 7, 
+                        name: { ar: 'العالمة زهراء علي', en: 'Scientist Zahra Ali' },
+                        role: { ar: 'عالمة حاسوب', en: 'Computer Scientist' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👩‍🔬',
+                        experience: '12 سنة في الذكاء الاصطناعي',
+                        specialty: 'الذكاء الاصطناعي وتحليل البيانات'
+                    },
+                    { 
+                        id: 8, 
+                        name: { ar: 'رائدة الفضاء دعاء راشد', en: 'Astronaut Duaa Rashid' },
+                        role: { ar: 'رائدة فضاء', en: 'Astronaut' },
+                        nationality: { ar: 'اليمن', en: 'Yemen' },
+                        avatar: '👩‍🚀',
+                        experience: '9 سنوات في التدريبات الفضائية',
+                        specialty: 'الأبحاث والتجارب'
+                    },
+                    { 
+                        id: 9, 
+                        name: { ar: 'رائدة الفضاء مريم لفته', en: 'Astronaut Maryam Lufta' },
+                        role: { ar: 'رائدة فضاء ١', en: 'Astronaut 1' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👩‍🚀',
+                        experience: '11 سنة في العمليات الفضائية',
+                        specialty: 'القيادة والبحث'
+                    },
+                    { 
+                        id: 10, 
+                        name: { ar: 'المهندسة همسة', en: 'Engineer Hamsa' },
+                        role: { ar: 'هندسة ميكاترونكس', en: 'Mechatronics Engineer' },
+                        nationality: { ar: 'العراق', en: 'Iraq' },
+                        avatar: '👩‍🔧',
+                        experience: '8 سنوات في الهندسة الميكانيكية',
+                        specialty: 'الميكانيكا والإلكترونيات'
+                    }
+                ];
+                
+                this.translations = {
+                    ar: {
+                        title: "HYDROSHELL IRAQ",
+                        subtitle: "محاكاة واقعية لمحطة Artemis القمرية بنسب ناسا",
+                        startBtn: "🚀 بدء المهمة",
+                        selectTitle: "اختر رائد الفضاء",
+                        confirmBtn: "✅ تأكيد الاختيار",
+                        character: "رائد الفضاء",
+                        location: "الموقع",
+                        objective: "الهدف",
+                        exploreBase: "استكشف قاعدة Artemis",
+                        findRecycling: "ابحث عن وحدة إعادة التدوير",
+                        operateMachine: "شغل آلة HYDROSHELL",
+                        collectSample: "اجمع عينات تربة",
+                        returnToBase: "العودة إلى الوحدة الرئيسية",
+                        missionComplete: "المهمة اكتملت",
+                        langBtn: "EN",
+                        selectedCount: "رائد فضاء مختار",
+                        instructions: "تحكم: WASD للحركة | E للتفاعل | الفأرة للرؤية | SHIFT للركض",
+                        loadingModels: "جاري تحميل النماذج ثلاثية الأبعاد...",
+                        loadingTextures: "جاري تحميل القوام...",
+                        loadingComplete: "جاهز للانطلاق!",
+                        interactMachine: "اضغط E لتشغيل آلة HYDROSHELL",
+                        interactDoor: "اضغط E لفتح الباب",
+                        interactPanel: "اضغط E للوصول إلى لوحة التحكم",
+                        interactSample: "اضغط E لجمع العينة",
+                        collectWaste: "اجمع النفايات البلاستيكية",
+                        wasteCollected: "نفايات مجمعة",
+                        wasteRequired: "مطلوب 5 نفايات لفتح نظام HYDROSHELL",
+                        hologramActive: "نظام HYDROSHELL نشط",
+                        returnToMission: "العودة إلى المهمة",
+                        interactWaste: "اضغط E لجمع النفايات"
+                    },
+                    en: {
+                        title: "HYDROSHELL IRAQ",
+                        subtitle: "NASA Artemis Lunar Base Realistic Simulator",
+                        startBtn: "🚀 Start Mission",
+                        selectTitle: "Select Astronaut",
+                        confirmBtn: "✅ Confirm Selection",
+                        character: "Astronaut",
+                        location: "Location",
+                        objective: "Objective",
+                        exploreBase: "Explore Artemis Base",
+                        findRecycling: "Find Recycling Module",
+                        operateMachine: "Operate HYDROSHELL Machine",
+                        collectSample: "Collect Soil Samples",
+                        returnToBase: "Return to Main Module",
+                        missionComplete: "Mission Complete",
+                        langBtn: "AR",
+                        selectedCount: "astronaut selected",
+                        instructions: "Controls: WASD to move | E to interact | Mouse to look | SHIFT to run",
+                        loadingModels: "Loading 3D models...",
+                        loadingTextures: "Loading textures...",
+                        loadingComplete: "Ready for launch!",
+                        interactMachine: "Press E to operate HYDROSHELL machine",
+                        interactDoor: "Press E to open door",
+                        interactPanel: "Press E to access control panel",
+                        interactSample: "Press E to collect sample",
+                        collectWaste: "Collect Plastic Waste",
+                        wasteCollected: "Waste Collected",
+                        wasteRequired: "5 waste items required to open HYDROSHELL system",
+                        hologramActive: "HYDROSHELL system active",
+                        returnToMission: "Return to Mission",
+                        interactWaste: "Press E to collect waste"
+                    }
+                };
+                
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.controls = null;
+                this.clock = null;
+                this.objects = {};
+                this.interactives = [];
+                this.currentInteractive = null;
+                
+                this.moveForward = false;
+                this.moveBackward = false;
+                this.moveLeft = false;
+                this.moveRight = false;
+                this.canJump = false;
+                this.velocity = new THREE.Vector3();
+                this.direction = new THREE.Vector3();
+                
+                this.moveSpeed = 10.0;
+                this.jumpHeight = 10.0;
+                this.gravity = 30.0;
+                
+                this.audio = {
+                    bgMusic: document.getElementById('bgMusic'),
+                    clickSound: document.getElementById('clickSound'),
+                    walkSound: document.getElementById('walkSound'),
+                    doorSound: document.getElementById('doorSound'),
+                    machineSound: document.getElementById('machineSound'),
+                    enabled: true
+                };
+                
+                this.keys = {};
+                this.isMoving = false;
+                this.isInteracting = false;
+                this.missionStarted = false;
+                this.updateCallbacks = [];
+                this.playerHeight = 2;
+            }
+            
+            async initialize() {
+                console.log('🚀 Artemis Mission Simulator - Fixed Movement Version');
+                
+                if (!this.checkWebGLSupport()) {
+                    this.showWebGLError();
+                    return;
+                }
+                
+                this.setupUI();
+                this.setupEventListeners();
+                this.renderAstronauts();
+                this.updateLanguage();
+                this.setupAudio();
+                
+                console.log('✅ النظام جاهز');
+            }
+            
+            checkWebGLSupport() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    return !!(window.WebGLRenderingContext && 
+                        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            showWebGLError() {
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: white; background: #000;">
+                        <h1 style="color: #ff3300;">⚠️ WebGL غير مدعوم</h1>
+                        <p>يجب تفعيل WebGL في إعدادات المتصفح لتحميل المحاكاة.</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #ff3300; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">
+                            إعادة المحاولة
+                        </button>
+                    </div>
+                `;
+            }
+            
+            setupUI() {
+                this.updateUIText();
+            }
+            
+            updateUIText() {
+                const t = this.translations[this.state.language];
+                
+                document.getElementById('mainLogo').textContent = t.title;
+                document.getElementById('subtitle').textContent = t.subtitle;
+                document.getElementById('startButton').textContent = t.startBtn;
+                document.getElementById('characterTitle').textContent = t.selectTitle;
+                document.getElementById('confirmButton').textContent = t.confirmBtn;
+                document.getElementById('langBtn').textContent = t.langBtn;
+                document.getElementById('selectedCount').textContent = `0 ${t.selectedCount}`;
+                document.getElementById('desktopInstructions').textContent = t.instructions;
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startButton').addEventListener('click', () => {
+                    this.playSound('click');
+                    this.showAstronautSelect();
+                });
+                
+                document.getElementById('confirmButton').addEventListener('click', () => {
+                    if (this.state.selectedCharacter) {
+                        this.playSound('click');
+                        this.startMission();
+                    }
+                });
+                
+                document.getElementById('langBtn').addEventListener('click', () => {
+                    this.playSound('click');
+                    this.toggleLanguage();
+                });
+                
+                this.setupMobileControls();
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (e.target.id === 'joystick' || e.target.id === 'joystick-head') {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+            
+            setupMobileControls() {
+                const joystick = document.getElementById('joystick');
+                const joystickHead = joystick.querySelector('.joystick-head');
+                const actionBtn = document.getElementById('actionBtn');
+                const jumpBtn = document.getElementById('jumpBtn');
+                
+                let touchId = null;
+                
+                joystick.addEventListener('touchstart', (e) => {
+                    if (touchId === null && this.missionStarted) {
+                        const touch = e.touches[0];
+                        touchId = touch.identifier;
+                        
+                        const rect = joystick.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        
+                        this.mobileTouchStart = { x: centerX, y: centerY };
+                        this.mobileTouchCurrent = { x: touch.clientX, y: touch.clientY };
+                    }
+                });
+                
+                joystick.addEventListener('touchmove', (e) => {
+                    if (!this.missionStarted || touchId === null) return;
+                    
+                    for (let touch of e.touches) {
+                        if (touch.identifier === touchId) {
+                            this.mobileTouchCurrent = { x: touch.clientX, y: touch.clientY };
+                            
+                            const deltaX = touch.clientX - this.mobileTouchStart.x;
+                            const deltaY = touch.clientY - this.mobileTouchStart.y;
+                            
+                            const distance = Math.min(40, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+                            const angle = Math.atan2(deltaY, deltaX);
+                            
+                            const moveX = Math.cos(angle) * (distance / 40);
+                            const moveY = Math.sin(angle) * (distance / 40);
+                            
+                            this.moveLeft = moveX < -0.3;
+                            this.moveRight = moveX > 0.3;
+                            this.moveForward = moveY < -0.3;
+                            this.moveBackward = moveY > 0.3;
+                            
+                            joystickHead.style.transform = `translate(-50%, -50%) translate(${moveX * 30}px, ${moveY * 30}px)`;
+                            break;
+                        }
+                    }
+                });
+                
+                joystick.addEventListener('touchend', (e) => {
+                    for (let touch of e.changedTouches) {
+                        if (touch.identifier === touchId) {
+                            this.moveLeft = false;
+                            this.moveRight = false;
+                            this.moveForward = false;
+                            this.moveBackward = false;
+                            joystickHead.style.transform = 'translate(-50%, -50%)';
+                            touchId = null;
+                            break;
+                        }
+                    }
+                });
+                
+                actionBtn.addEventListener('touchstart', () => {
+                    if (this.missionStarted) {
+                        this.handleInteraction();
+                        actionBtn.style.transform = 'scale(0.9)';
+                    }
+                });
+                
+                actionBtn.addEventListener('touchend', () => {
+                    actionBtn.style.transform = 'scale(1)';
+                });
+                
+                jumpBtn.addEventListener('touchstart', () => {
+                    if (this.missionStarted && this.canJump) {
+                        this.velocity.y += this.jumpHeight;
+                        this.canJump = false;
+                        jumpBtn.style.transform = 'scale(0.9)';
+                    }
+                });
+                
+                jumpBtn.addEventListener('touchend', () => {
+                    jumpBtn.style.transform = 'scale(1)';
+                });
+            }
+            
+            showAstronautSelect() {
+                document.getElementById('startScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('startScreen').style.display = 'none';
+                    document.getElementById('characterScreen').style.display = 'flex';
+                    document.getElementById('characterScreen').style.opacity = '1';
+                }, 1000);
+            }
+            
+            renderAstronauts() {
+                const grid = document.getElementById('charactersGrid');
+                grid.innerHTML = '';
+                
+                this.astronauts.forEach(astro => {
+                    const card = document.createElement('div');
+                    card.className = 'character-card';
+                    card.dataset.id = astro.id;
+                    
+                    const lang = this.state.language;
+                    const name = astro.name[lang];
+                    const role = astro.role[lang];
+                    const nationality = astro.nationality[lang];
+                    
+                    card.innerHTML = `
+                        <div class="character-avatar">${astro.avatar}</div>
+                        <div class="character-info">
+                            <div class="character-name">${name}</div>
+                            <div class="character-role">${role}</div>
+                            <div class="character-nationality">${nationality}</div>
+                        </div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        this.selectAstronaut(astro.id);
+                        
+                        document.querySelectorAll('.character-card').forEach(c => {
+                            c.classList.remove('selected');
+                        });
+                        card.classList.add('selected');
+                    });
+                    
+                    grid.appendChild(card);
+                });
+            }
+            
+            selectAstronaut(id) {
+                this.state.selectedCharacter = this.astronauts.find(a => a.id === id);
+                document.getElementById('confirmButton').disabled = false;
+                
+                const t = this.translations[this.state.language];
+                document.getElementById('selectedCount').textContent = `1 ${t.selectedCount}`;
+                
+                this.playSound('click');
+            }
+            
+            async startMission() {
+                document.getElementById('characterScreen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('characterScreen').style.display = 'none';
+                    document.getElementById('loadingScreen').style.display = 'flex';
+                    
+                    this.loadMission();
+                }, 1000);
+            }
+            
+            async loadMission() {
+                this.updateLoading('تهيئة النظام...', 10);
+                
+                try {
+                    await this.initThreeJS();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    this.updateLoading('جاري بناء بيئة القمر...', 30);
+                    await this.createLunarEnvironment();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    this.updateLoading('جاري بناء محطة Artemis...', 60);
+                    await this.createArtemisBase();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    this.updateLoading('جاري إعداد الأنظمة...', 80);
+                    await this.setupMissionSystems();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    this.updateLoading('جاهز للانطلاق!', 100);
+                    
+                    setTimeout(() => {
+                        document.getElementById('loadingScreen').style.display = 'none';
+                        document.getElementById('gameScreen').style.display = 'block';
+                        this.missionStarted = true;
+                        this.updateHUD();
+                        this.setupKeyControls();
+                        this.animate();
+                        
+                        this.showNotification('المهمة Artemis بدأت - الأنظمة تعمل', 'info');
+                        this.showNotification('استخدم WASD للحركة والفأرة للرؤية وE للتفاعل', 'info');
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('فشل تحميل المهمة:', error);
+                    this.showError('فشل تحميل المحاكاة. يرجى تحديث الصفحة.');
+                }
+            }
+            
+            updateLoading(text, percent) {
+                document.getElementById('loadingTitle').textContent = text;
+                document.getElementById('loadingBar').style.width = `${percent}%`;
+                document.getElementById('loadingText').textContent = `${percent}% مكتمل`;
+            }
+            
+            async initThreeJS() {
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.Fog(0x000010, 100, 500);
+                
+                this.camera = new THREE.PerspectiveCamera(
+                    75,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    5000
+                );
+                this.camera.position.set(0, 20, 50);
+                
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: document.getElementById('gameCanvas'),
+                    antialias: true,
+                    alpha: false
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                
+                this.clock = new THREE.Clock();
+                
+                this.setupLighting();
+                
+                window.addEventListener('resize', () => this.onWindowResize());
+                
+                console.log('✅ Three.js مهيأ');
+            }
+            
+            setupLighting() {
+                const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+                sunLight.position.set(100, 100, 50);
+                sunLight.castShadow = true;
+                this.scene.add(sunLight);
+                
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+                this.scene.add(ambientLight);
+            }
+            
+            async createLunarEnvironment() {
+                const skyGeometry = new THREE.SphereGeometry(2000, 32, 32);
+                const skyMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    side: THREE.BackSide
+                });
+                const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+                this.scene.add(sky);
+                
+                const moonGeometry = new THREE.PlaneGeometry(1000, 1000, 100, 100);
+                
+                const vertices = moonGeometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    vertices[i + 2] = (Math.random() - 0.5) * 5;
+                }
+                moonGeometry.attributes.position.needsUpdate = true;
+                
+                const moonMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x888888,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const moonSurface = new THREE.Mesh(moonGeometry, moonMaterial);
+                moonSurface.rotation.x = -Math.PI / 2;
+                moonSurface.position.y = 0;
+                moonSurface.receiveShadow = true;
+                this.scene.add(moonSurface);
+                this.objects.moonSurface = moonSurface;
+                
+                const starsGeometry = new THREE.BufferGeometry();
+                const starsCount = 10000;
+                const positions = new Float32Array(starsCount * 3);
+                
+                for (let i = 0; i < starsCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 4000;
+                    positions[i + 1] = (Math.random() - 0.5) * 4000;
+                    positions[i + 2] = (Math.random() - 0.5) * 4000;
+                }
+                
+                starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 2 });
+                const stars = new THREE.Points(starsGeometry, starsMaterial);
+                this.scene.add(stars);
+                
+                console.log('✅ بيئة القمر جاهزة');
+            }
+            
+            async createArtemisBase() {
+                this.createPrimitiveStation();
+                this.createPrimitiveRover();
+                this.createPlasticWasteItems();
+                this.createHydroshellMachine();
+                
+                console.log('✅ محطة Artemis جاهزة');
+            }
+            
+            createPrimitiveStation() {
+                const stationGroup = new THREE.Group();
+                
+                const mainGeometry = new THREE.CylinderGeometry(15, 15, 30, 32);
+                const mainMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x445577,
+                    metalness: 0.7,
+                    roughness: 0.3
+                });
+                const main = new THREE.Mesh(mainGeometry, mainMaterial);
+                main.position.y = 15;
+                main.castShadow = true;
+                main.receiveShadow = true;
+                stationGroup.add(main);
+                
+                const domeGeometry = new THREE.SphereGeometry(12, 32, 16);
+                const domeMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x8899aa,
+                    metalness: 0.8,
+                    roughness: 0.2,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+                dome.position.y = 30;
+                dome.castShadow = true;
+                stationGroup.add(dome);
+                
+                const solarPanelGeometry = new THREE.BoxGeometry(30, 0.5, 20);
+                const solarPanelMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x333333,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+                const solarPanel = new THREE.Mesh(solarPanelGeometry, solarPanelMaterial);
+                solarPanel.position.set(25, 20, 0);
+                solarPanel.rotation.y = Math.PI / 4;
+                stationGroup.add(solarPanel);
+                
+                const solarPanel2 = new THREE.Mesh(solarPanelGeometry, solarPanelMaterial);
+                solarPanel2.position.set(-25, 20, 0);
+                solarPanel2.rotation.y = -Math.PI / 4;
+                stationGroup.add(solarPanel2);
+                
+                const tubeGeometry = new THREE.CylinderGeometry(2, 2, 25, 16);
+                const tubeMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x556677,
+                    metalness: 0.6,
+                    roughness: 0.4
+                });
+                const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                tube.position.set(-20, 12.5, 10);
+                tube.rotation.x = Math.PI / 2;
+                stationGroup.add(tube);
+                
+                const tube2 = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                tube2.position.set(15, 12.5, -15);
+                tube2.rotation.x = Math.PI / 2;
+                stationGroup.add(tube2);
+                
+                stationGroup.position.set(0, 0, 0);
+                this.scene.add(stationGroup);
+                this.objects.mainStation = stationGroup;
+                
+                const entranceMarker = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5, 16, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: 0x00ff00,
+                        transparent: true,
+                        opacity: 0.5,
+                        visible: false
+                    })
+                );
+                entranceMarker.position.set(0, 2, 15);
+                this.scene.add(entranceMarker);
+                
+                this.interactives.push({
+                    object: entranceMarker,
+                    type: 'entrance',
+                    action: () => this.enterStation(),
+                    distance: 5,
+                    label: 'station_entrance'
+                });
+            }
+            
+            createPrimitiveRover() {
+                const roverGroup = new THREE.Group();
+                
+                const bodyGeometry = new THREE.BoxGeometry(6, 2, 4);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x333333,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.y = 1;
+                roverGroup.add(body);
+                
+                const wheelGeometry = new THREE.CylinderGeometry(1, 1, 0.6, 16);
+                const wheelMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x222222,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+                
+                const wheelPositions = [
+                    [2.5, -1, 1.5],
+                    [2.5, -1, -1.5],
+                    [-2.5, -1, 1.5],
+                    [-2.5, -1, -1.5]
+                ];
+                
+                wheelPositions.forEach(pos => {
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.position.set(pos[0], pos[1], pos[2]);
+                    wheel.rotation.z = Math.PI / 2;
+                    roverGroup.add(wheel);
+                });
+                
+                roverGroup.position.set(40, 2, -30);
+                roverGroup.rotation.y = Math.PI / 4;
+                
+                this.scene.add(roverGroup);
+                this.objects.rover = roverGroup;
+                
+                this.interactives.push({
+                    object: roverGroup,
+                    type: 'rover',
+                    action: () => this.inspectRover(),
+                    distance: 6,
+                    label: 'exploration_rover'
+                });
+            }
+            
+            createPlasticWasteItems() {
+                const wasteGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.2, 8);
+                const wasteMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x00ff00,
+                    emissive: 0x003300,
+                    emissiveIntensity: 0.5
+                });
+                
+                for (let i = 0; i < 15; i++) {
+                    const waste = new THREE.Mesh(wasteGeometry, wasteMaterial);
+                    waste.position.set(
+                        (Math.random() - 0.5) * 100,
+                        0.3,
+                        (Math.random() - 0.5) * 100
+                    );
+                    waste.rotation.x = Math.PI / 2;
+                    
+                    this.scene.add(waste);
+                    
+                    this.interactives.push({
+                        object: waste,
+                        type: 'waste',
+                        action: () => this.collectWaste(waste),
+                        distance: 3,
+                        label: 'plastic_waste'
+                    });
+                }
+            }
+            
+            collectWaste(waste) {
+                this.scene.remove(waste);
+                this.state.plasticWaste++;
+                this.updateHUD();
+                
+                const t = this.translations[this.state.language];
+                this.showNotification(
+                    `✓ ${t.wasteCollected} (${this.state.plasticWaste}/${this.state.wasteRequired})`,
+                    'success'
+                );
+                
+                const index = this.interactives.findIndex(item => item.object === waste);
+                if (index > -1) {
+                    this.interactives.splice(index, 1);
+                }
+                
+                this.playSound('click');
+                
+                if (this.state.plasticWaste >= this.state.wasteRequired) {
+                    this.showNotification('🎉 لقد جمعت النفايات الكافية! توجه إلى آلة HYDROSHELL واضغط E', 'success');
+                }
+            }
+            
+            createHydroshellMachine() {
+                const machineGroup = new THREE.Group();
+                
+                const baseGeometry = new THREE.CylinderGeometry(4, 4, 2, 16);
+                const baseMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x0066cc,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.set(0, 1, -50);
+                base.castShadow = true;
+                machineGroup.add(base);
+                
+                const bodyGeometry = new THREE.BoxGeometry(6, 8, 6);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x004488,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                body.position.set(0, 5, -50);
+                machineGroup.add(body);
+                
+                const screenGeometry = new THREE.PlaneGeometry(3, 2);
+                const screenMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x00ff00,
+                    emissive: 0x004400,
+                    emissiveIntensity: 0.7
+                });
+                const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+                screen.position.set(0, 5, -53);
+                screen.rotation.y = Math.PI;
+                machineGroup.add(screen);
+                
+                this.scene.add(machineGroup);
+                this.objects.hydroshellMachine = machineGroup;
+                
+                this.interactives.push({
+                    object: machineGroup,
+                    type: 'hydroshell_machine',
+                    action: () => this.accessHydroshellMachine(),
+                    distance: 5,
+                    label: 'hydroshell_machine'
+                });
+            }
+            
+            accessHydroshellMachine() {
+                if (this.state.plasticWaste < this.state.wasteRequired) {
+                    const t = this.translations[this.state.language];
+                    this.showNotification(
+                        `${t.wasteRequired} (${this.state.plasticWaste}/${this.state.wasteRequired})`,
+                        'error'
+                    );
+                    return;
+                }
+                
+                this.playSound('machineSound');
+                this.showNotification('🚀 تشغيل آلة الطحن HYDROSHELL...', 'info');
+                
+                setTimeout(() => {
+                    window.open('https://andromedateam22-commits.github.io/hydroshell/', '_blank');
+                }, 1000);
+            }
+            
+            setupMissionSystems() {
+                const checkInteractions = () => {
+                    if (!this.missionStarted || !this.camera) return;
+                    
+                    const cameraPos = this.camera.position;
+                    let closest = null;
+                    let minDistance = Infinity;
+                    
+                    for (const interactive of this.interactives) {
+                        const distance = cameraPos.distanceTo(interactive.object.position);
+                        
+                        if (distance < interactive.distance && distance < minDistance) {
+                            closest = interactive;
+                            minDistance = distance;
+                        }
+                    }
+                    
+                    this.currentInteractive = closest;
+                    
+                    const hint = document.getElementById('interactionHint');
+                    if (closest) {
+                        hint.style.display = 'block';
+                        
+                        const t = this.translations[this.state.language];
+                        let hintText = '';
+                        
+                        switch (closest.type) {
+                            case 'waste':
+                                hintText = t.interactWaste;
+                                break;
+                            case 'hydroshell_machine':
+                                hintText = t.interactMachine;
+                                break;
+                            case 'rover':
+                                hintText = t.interactPanel;
+                                break;
+                            case 'entrance':
+                                hintText = t.interactDoor;
+                                break;
+                            default:
+                                hintText = t.interactPanel;
+                        }
+                        
+                        hint.textContent = hintText;
+                    } else {
+                        hint.style.display = 'none';
+                    }
+                };
+                
+                this.updateCallbacks.push(checkInteractions);
+                
+                const updateHUD = () => {
+                    if (!this.missionStarted) return;
+                    
+                    this.state.missionTime += this.clock.getDelta();
+                    this.state.oxygen = Math.max(95, this.state.oxygen - 0.0001);
+                    this.updateHUD();
+                };
+                
+                this.updateCallbacks.push(updateHUD);
+            }
+            
+            setupKeyControls() {
+                document.addEventListener('keydown', (event) => {
+                    if (!this.missionStarted) return;
+                    
+                    switch (event.code) {
+                        case 'KeyW':
+                        case 'ArrowUp':
+                            this.moveForward = true;
+                            break;
+                        case 'KeyS':
+                        case 'ArrowDown':
+                            this.moveBackward = true;
+                            break;
+                        case 'KeyA':
+                        case 'ArrowLeft':
+                            this.moveLeft = true;
+                            break;
+                        case 'KeyD':
+                        case 'ArrowRight':
+                            this.moveRight = true;
+                            break;
+                        case 'Space':
+                            if (this.canJump) {
+                                this.velocity.y += this.jumpHeight;
+                                this.canJump = false;
+                            }
+                            break;
+                        case 'KeyE':
+                            this.handleInteraction();
+                            break;
+                        case 'ShiftLeft':
+                        case 'ShiftRight':
+                            this.moveSpeed = 20.0;
+                            break;
+                    }
+                    
+                    this.keys[event.code] = true;
+                });
+                
+                document.addEventListener('keyup', (event) => {
+                    if (!this.missionStarted) return;
+                    
+                    switch (event.code) {
+                        case 'KeyW':
+                        case 'ArrowUp':
+                            this.moveForward = false;
+                            break;
+                        case 'KeyS':
+                        case 'ArrowDown':
+                            this.moveBackward = false;
+                            break;
+                        case 'KeyA':
+                        case 'ArrowLeft':
+                            this.moveLeft = false;
+                            break;
+                        case 'KeyD':
+                        case 'ArrowRight':
+                            this.moveRight = false;
+                            break;
+                        case 'ShiftLeft':
+                        case 'ShiftRight':
+                            this.moveSpeed = 10.0;
+                            break;
+                    }
+                    
+                    this.keys[event.code] = false;
+                });
+                
+                window.addEventListener('mousemove', (event) => {
+                    if (!this.missionStarted || !this.camera) return;
+                    
+                    if (!this.controls) {
+                        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+                        this.controls.enableDamping = true;
+                        this.controls.dampingFactor = 0.05;
+                        this.controls.screenSpacePanning = false;
+                        this.controls.minDistance = 5;
+                        this.controls.maxDistance = 500;
+                        this.controls.maxPolarAngle = Math.PI;
+                    }
+                });
+                
+                document.addEventListener('click', () => {
+                    if (this.missionStarted && !this.controls) {
+                        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+                        this.controls.enableDamping = true;
+                        this.controls.dampingFactor = 0.05;
+                        this.controls.screenSpacePanning = false;
+                        this.controls.minDistance = 5;
+                        this.controls.maxDistance = 500;
+                        this.controls.maxPolarAngle = Math.PI;
+                    }
+                });
+            }
+            
+            handleInteraction() {
+                if (this.currentInteractive && !this.isInteracting) {
+                    this.isInteracting = true;
+                    this.playSound('click');
+                    
+                    this.currentInteractive.action();
+                    
+                    setTimeout(() => {
+                        this.isInteracting = false;
+                    }, 1000);
+                }
+            }
+            
+            enterStation() {
+                this.playSound('doorSound');
+                this.showNotification('🚪 دخول المحطة الرئيسية', 'info');
+            }
+            
+            inspectRover() {
+                this.playSound('click');
+                this.showNotification('🚗 مركبة الاستكشاف - جاهزة للتشغيل', 'info');
+            }
+            
+            setupAudio() {
+                this.audio.bgMusic.volume = 0.2;
+                this.audio.bgMusic.play().catch(() => {
+                    this.audio.enabled = false;
+                });
+                
+                this.audio.clickSound.volume = 0.4;
+                this.audio.walkSound.volume = 0.1;
+                this.audio.doorSound.volume = 0.5;
+                this.audio.machineSound.volume = 0.6;
+            }
+            
+            playSound(type) {
+                if (!this.audio.enabled) return;
+                
+                try {
+                    const sound = this.audio[type];
+                    if (sound) {
+                        sound.currentTime = 0;
+                        sound.play();
+                    }
+                } catch (e) {}
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                const delta = this.clock.getDelta();
+                
+                if (this.missionStarted) {
+                    this.updateMovement(delta);
+                    this.updateCallbacks.forEach(callback => callback());
+                    
+                    if (this.controls) {
+                        this.controls.update();
+                    }
+                }
+                
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+            
+            updateMovement(delta) {
+                if (!this.camera || !this.missionStarted) return;
+                
+                this.velocity.y -= this.gravity * delta;
+                
+                this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
+                this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
+                this.direction.normalize();
+                
+                if (this.direction.length() > 0) {
+                    const cameraDirection = new THREE.Vector3();
+                    this.camera.getWorldDirection(cameraDirection);
+                    cameraDirection.y = 0;
+                    cameraDirection.normalize();
+                    
+                    const cameraRight = new THREE.Vector3();
+                    cameraRight.crossVectors(this.camera.up, cameraDirection).normalize();
+                    
+                    const moveX = this.direction.x * this.moveSpeed * delta;
+                    const moveZ = this.direction.z * this.moveSpeed * delta;
+                    
+                    this.camera.position.addScaledVector(cameraRight, moveX);
+                    this.camera.position.addScaledVector(cameraDirection, moveZ);
+                    
+                    if (!this.isMoving) {
+                        this.isMoving = true;
+                        this.playSound('walk');
+                    }
+                } else {
+                    this.isMoving = false;
+                }
+                
+                this.camera.position.y += this.velocity.y * delta;
+                
+                const groundLevel = this.getGroundLevel(this.camera.position.x, this.camera.position.z);
+                if (this.camera.position.y < groundLevel + this.playerHeight) {
+                    this.camera.position.y = groundLevel + this.playerHeight;
+                    this.velocity.y = 0;
+                    this.canJump = true;
+                }
+                
+                if (this.isMoving && this.canJump) {
+                    if (!this.walkSoundInterval) {
+                        this.walkSoundInterval = setInterval(() => {
+                            this.playSound('walk');
+                        }, 500);
+                    }
+                } else {
+                    if (this.walkSoundInterval) {
+                        clearInterval(this.walkSoundInterval);
+                        this.walkSoundInterval = null;
+                    }
+                }
+            }
+            
+            getGroundLevel(x, z) {
+                return 0;
+            }
+            
+            updateHUD() {
+                if (!this.state.selectedCharacter) return;
+                
+                const t = this.translations[this.state.language];
+                const char = this.state.selectedCharacter;
+                
+                document.getElementById('characterName').textContent = char.name[this.state.language];
+                document.getElementById('wasteValue').textContent = this.state.plasticWaste;
+                
+                document.getElementById('oxygenValue').textContent = Math.floor(this.state.oxygen);
+                document.getElementById('pressureValue').textContent = this.state.pressure.toFixed(1);
+                document.getElementById('tempValue').textContent = this.state.temperature.toFixed(1);
+                
+                if (this.state.plasticWaste < this.state.wasteRequired) {
+                    document.getElementById('objectiveText').textContent = 
+                        `${t.collectWaste} (${this.state.plasticWaste}/${this.state.wasteRequired})`;
+                } else {
+                    document.getElementById('objectiveText').textContent = t.operateMachine;
+                }
+            }
+            
+            toggleLanguage() {
+                this.state.language = this.state.language === 'ar' ? 'en' : 'ar';
+                this.updateLanguage();
+                this.updateUIText();
+                this.updateHUD();
+                
+                document.body.dir = this.state.language === 'ar' ? 'rtl' : 'ltr';
+            }
+            
+            updateLanguage() {
+                document.getElementById('langBtn').textContent = this.translations[this.state.language].langBtn;
+            }
+            
+            showNotification(message, type = 'info') {
+                console.log(`[${type.toUpperCase()}] ${message}`);
+                
+                const notification = document.createElement('div');
+                notification.textContent = message;
+                notification.style.position = 'fixed';
+                notification.style.top = '50%';
+                notification.style.left = '50%';
+                notification.style.transform = 'translate(-50%, -50%)';
+                notification.style.background = 'rgba(0, 20, 40, 0.9)';
+                notification.style.color = type === 'success' ? '#00ff00' : 
+                                          type === 'error' ? '#ff3300' : '#00aaff';
+                notification.style.padding = '15px 25px';
+                notification.style.borderRadius = '8px';
+                notification.style.border = `1px solid ${type === 'success' ? '#00ff00' : 
+                                                         type === 'error' ? '#ff3300' : '#00aaff'}`;
+                notification.style.zIndex = '1000';
+                notification.style.fontFamily = "'Tajawal', sans-serif";
+                notification.style.textAlign = 'center';
+                notification.style.backdropFilter = 'blur(5px)';
+                notification.style.fontSize = '1.1rem';
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 500);
+                }, 3000);
+            }
+            
+            showError(message) {
+                this.showNotification(`خطأ: ${message}`, 'error');
+            }
+            
+            onWindowResize() {
+                if (this.camera && this.renderer) {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+            }
+        }
+        
+        const mission = new ArtemisMission();
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => mission.initialize());
+        } else {
+            mission.initialize();
+        }
+        
+        window.ArtemisMission = mission;
+    </script>
+</body>
+</html>
